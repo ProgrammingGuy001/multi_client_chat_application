@@ -10,6 +10,7 @@ public class Server {
     private ServerSocket serverSocket;
     private static final List<ClientHandler> clientHandlers = new CopyOnWriteArrayList<>();
     private static final Set<String> usernames = ConcurrentHashMap.newKeySet();
+    private static final String password="act"; //change to whatever is suitable
 
     public Server(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
@@ -21,7 +22,7 @@ public class Server {
             try {
                 Socket socket = serverSocket.accept();
                 System.out.println("New client connected!");
-                ClientHandler clientHandler = new ClientHandler(socket, clientHandlers, usernames);
+                ClientHandler clientHandler = new ClientHandler(socket, clientHandlers, usernames,password);
                 new Thread(clientHandler).start();
             } catch (IOException e) {
                 System.out.println("Error accepting client connection.");

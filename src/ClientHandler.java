@@ -10,23 +10,33 @@ public class ClientHandler implements Runnable {
     private String clientUsername;
     private List<ClientHandler> clientHandlers;
     private Set<String> usernames;
+    private String ClientPassword;
 
-    public ClientHandler(Socket socket, List<ClientHandler> clientHandlers, Set<String> usernames) {
+    public ClientHandler(Socket socket, List<ClientHandler> clientHandlers, Set<String> usernames,String password) {
         this.socket = socket;
         this.clientHandlers = clientHandlers;
         this.usernames = usernames;
         try {
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.clientUsername = bufferedReader.readLine();
-
-            synchronized (this) {
-                usernames.add(clientUsername);
-                clientHandlers.add(this);
+            this.ClientPassword = bufferedReader.readLine();
+            if(!ClientPassword.equals(password)){
+                bufferedWriter.write("SERVER: Incorrect password");
+                bufferedWriter.newLine();
+                bufferedWriter.flush();
+                bufferedWriter.close();
+                bufferedReader.close();
+                return;
             }
-
-            broadcastMessage("SERVER: Welcome " + clientUsername);
-            broadcastMessage("SERVER: Currently online: " + usernames.toString());
+            else{
+                this.clientUsername = bufferedReader.readLine();
+                synchronized (this) {
+                    usernames.add(clientUsername);
+                    clientHandlers.add(this);
+                }
+                broadcastMessage("SERVER: Welcome " + clientUsername);
+                broadcastMessage("SERVER: Currently online: " + usernames.toString());
+            }
         } catch (IOException e) {
             closeEverything();
         }

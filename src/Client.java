@@ -19,6 +19,15 @@ public class Client {
             closeEverything();
         }
     }
+    public void authenticate(String user_password){
+        try {
+            bufferedWriter.write(user_password);
+            bufferedWriter.newLine();
+            bufferedWriter.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public void sendMessage() {
         try (Scanner scanner = new Scanner(System.in)) {
@@ -26,7 +35,7 @@ public class Client {
             bufferedWriter.newLine();
             bufferedWriter.flush();
 
-            System.out.println("Welcome to the chat, " + username + "! Type your messages below:");
+            //System.out.println("Welcome to the chat, " + username + "! Type your messages below:");
 
             while (socket.isConnected()) {
                 String message = scanner.nextLine().trim();
@@ -80,16 +89,21 @@ public class Client {
     public static void main(String[] args) {
         try {
             Scanner scanner = new Scanner(System.in);
+            System.out.println("Enter your password:");
+            String user_password = scanner.nextLine().trim();
+            while (user_password.isEmpty()) {
+                System.out.println("Password cannot be empty. Please enter a valid password:");
+                user_password = scanner.nextLine().trim();
+            }
             System.out.println("Enter your username:");
             String username = scanner.nextLine().trim();
-
             while (username.isEmpty()) {
                 System.out.println("Username cannot be empty. Please enter a valid username:");
                 username = scanner.nextLine().trim();
             }
-
             Socket socket = new Socket("localhost", 5000);
             Client client = new Client(socket, username);
+            client.authenticate(user_password);
             client.listenForMessages();
             client.sendMessage();
         } catch (IOException e) {
