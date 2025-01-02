@@ -2,8 +2,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -12,23 +10,33 @@ public class ClientHandler implements Runnable {
     private String clientUsername;
     private List<ClientHandler> clientHandlers;
     private Set<String> usernames;
+    private String ClientPassword;
 
-    public ClientHandler(Socket socket, List<ClientHandler> clientHandlers, Set<String> usernames) {// the set is thread safe
+    public ClientHandler(Socket socket, List<ClientHandler> clientHandlers, Set<String> usernames,String password) {
         this.socket = socket;
         this.clientHandlers = clientHandlers;
-        this.usernames = usernames; // Assign the passed `usernames` Set
+        this.usernames = usernames;
         try {
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.clientUsername = bufferedReader.readLine();
-
-            synchronized (this) {
-                usernames.add(clientUsername); // Add username to set
-                clientHandlers.add(this);      // Add client handler to list
+            this.ClientPassword = bufferedReader.readLine();
+            if(!ClientPassword.equals(password)){
+                bufferedWriter.write("SERVER: Incorrect password");
+                bufferedWriter.newLine();
+                bufferedWriter.flush();
+                bufferedWriter.close();
+                bufferedReader.close();
+                return;
             }
-
-            broadcastMessage("SERVER: Welcome " + clientUsername);
-            broadcastMessage("SERVER: Currently online: " + usernames.toString());
+            else{
+                this.clientUsername = bufferedReader.readLine();
+                synchronized (this) {
+                    usernames.add(clientUsername);
+                    clientHandlers.add(this);
+                }
+                broadcastMessage("SERVER: Welcome " + clientUsername);
+                broadcastMessage("SERVER: Currently online: " + usernames.toString());
+            }
         } catch (IOException e) {
             closeEverything();
         }
@@ -39,9 +47,20 @@ public class ClientHandler implements Runnable {
         String message;
         while (socket.isConnected()) {
             try {
-                message = bufferedReader.readLine(); // Receive message from client
+                message = bufferedReader.readLine();
                 if (message != null) {
-                    broadcastMessage(clientUsername + ": " + message); // Broadcast to all clients
+                    if (message.startsWith("@")) {
+                        String[] parts = message.split(" ", 2);
+                        if (parts.length == 2) {
+                            String targetUsername = parts[0].substring(1);
+                            String privateMessage = parts[1];
+                            sendPrivateMessage(targetUsername, privateMessage);
+                        } else {
+                            sendMessageToClient("SERVER: Invalid private message format. Use @username <message>.");
+                        }
+                    } else {
+                        broadcastMessage(clientUsername + ": " + message);
+                    }
                 }
             } catch (IOException e) {
                 closeEverything();
@@ -50,15 +69,43 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public void sendPrivateMessage(String targetUsername, String message) {
+        boolean found = false;
+        synchronized (clientHandlers) {
+            for (ClientHandler client : clientHandlers) {
+                if (client.clientUsername.equals(targetUsername)) {
+                    found = true;
+                    try {
+                        client.sendMessageToClient("Private Message from " + clientUsername + ": " + message);
+                    } catch (IOException e) {
+                        client.closeEverything();
+                    }
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            try {
+                sendMessageToClient("SERVER: " + targetUsername + " is not online.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void sendMessageToClient(String message) throws IOException {
+        bufferedWriter.write(message);
+        bufferedWriter.newLine();
+        bufferedWriter.flush();
+    }
+
     public void broadcastMessage(String message) {
         synchronized (clientHandlers) {
             for (ClientHandler client : clientHandlers) {
                 try {
-                    client.bufferedWriter.write(message);
-                    client.bufferedWriter.newLine();
-                    client.bufferedWriter.flush();
+                    client.sendMessageToClient(message);
                 } catch (IOException e) {
-                    client.closeEverything(); // Close client connection if an error occurs
+                    client.closeEverything();
                 }
             }
         }
@@ -67,8 +114,8 @@ public class ClientHandler implements Runnable {
     public void closeEverything() {
         try {
             synchronized (this) {
-                clientHandlers.remove(this); // Remove client from list
-                usernames.remove(clientUsername); // Remove username from set
+                clientHandlers.remove(this);
+                usernames.remove(clientUsername);
             }
 
             broadcastMessage("SERVER: " + clientUsername + " has left the chat.");
