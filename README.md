@@ -11,6 +11,8 @@ The system is composed of two key components:
 - **Threaded communication:** The server uses multithreading to handle multiple client connections concurrently.
 - **Graceful disconnection handling:** Clients and the server handle disconnections to avoid resource leaks.
 - **Interactive prompts:** Users are prompted to input their username and messages, enhancing usability.
+- **Authentication:** Introduces username and password for client login.
+- **Private messaging & group chat:** Enables targeted communication within the chat system.
 
 ## How It Works
 ### Architecture Flow
@@ -98,10 +100,8 @@ This is a class for managing client-side activity in the chat application.
     - A user's username cannot be empty.
     - Warns users when messages are blank.
 
-## Improvements To Consider
-- Add authentication (username/password).
+## Features in Pipeline
 - Enhance the user interface with GUI (e.g., using JavaFX or Swing).
-- Introduce private messaging and group chat functionality.
 - Enable persistence by storing chat messages in a database.
 - Implement encryption for secure communication.
 
