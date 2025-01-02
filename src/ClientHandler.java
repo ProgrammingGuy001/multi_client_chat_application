@@ -2,8 +2,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -39,14 +37,53 @@ public class ClientHandler implements Runnable {
         String message;
         while (socket.isConnected()) {
             try {
-                message = bufferedReader.readLine(); // Receive message from client
-                if (message != null) {
+                message = bufferedReader.readLine();
+                if(message.startsWith("@"))
+                {
+                    String[]parts=message.split(" ",2);
+                    if(parts.length==2)
+                    {
+                        String target_username=parts[0].substring(1);
+                        String target_message=parts[1];
+                        privatebroadcastMessage(target_username,target_message);
+                    }
+                    else{
+                        broadcastMessage(clientUsername + ": please follow @<username><space>tt<message> syntax");
+                    }
+                }
+                else{
                     broadcastMessage(clientUsername + ": " + message); // Broadcast to all clients
                 }
             } catch (IOException e) {
                 closeEverything();
                 break;
             }
+        }
+    }
+    public void privatebroadcastMessage(String TargetUsername,String TargetMessage)
+    {
+        boolean found=false;
+        synchronized (clientHandlers) {
+            for(ClientHandler client:clientHandlers){
+                if(client.clientUsername.equals(TargetUsername))
+                {
+                    found=true;
+                    try {
+                        client.bufferedWriter.write("Private Message from "+clientUsername+": "+TargetMessage);
+                        client.bufferedWriter.newLine();
+                        client.bufferedWriter.flush();
+                    } catch (Exception e) {
+                        client.closeEverything();
+                    }
+                    break;
+                }
+                if(!found){
+                    broadcastMessage(clientUsername + ": "+TargetUsername+" is not online");
+                    break;
+                }
+            }
+
+
         }
     }
 
