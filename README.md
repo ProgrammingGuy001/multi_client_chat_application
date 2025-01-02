@@ -7,6 +7,7 @@ The system is composed of two key components:
 
 ## Key Features
 - **Multi-client support:** Multiple clients can connect to a single server to participate in an interactive chat.
+- **Password authentication:** Clients must provide a valid password to connect to the server.
 - **Real-time messaging:** Clients can send and receive messages in real time.
 - **Threaded communication:** The server uses multithreading to handle multiple client connections concurrently.
 - **Graceful disconnection handling:** Clients and the server handle disconnections to avoid resource leaks.
@@ -14,8 +15,9 @@ The system is composed of two key components:
 
 ## How It Works
 ### Architecture Flow
+- Clients must provide login credentials (username and password) to gain access to the chat.
 1. **Server**:
-    - Listens for incoming client socket connections on a specified port.
+    - Listens for incoming client socket connections on a specified port and validates login credentials.
     - Manages connected clients using threads to broadcast their messages to all other clients.
     - Handles proper disconnection when a client terminates their session.
 
@@ -28,6 +30,7 @@ The system is composed of two key components:
     - Handles proper disconnection and network errors gracefully.
 
 ## Setup Instructions
+- Clients must have a username and password to authenticate with the server.
 1. **Prerequisites**
     - Java 22 or compatible version installed.
     - Basic understanding of networking protocols (Sockets/TCP).
@@ -42,6 +45,7 @@ The system is composed of two key components:
     - Compile the `Client` class file.
     - Run the client program and provide:
         - Hostname/IP of the server (e.g., `localhost` or `192.168.x.x`).
+        - Valid username and password for authentication.
         - Same port number used by the server.
 
     - Interact with other connected clients.
@@ -50,12 +54,13 @@ The system is composed of two key components:
 ### 1. **Client**
 This is a class for managing client-side activity in the chat application.
 #### Key Features:
-- **Connection Handling**:
+- **Connection Handling and Authentication**:
+    - Establishes a connection with the server using a socket after providing valid login credentials.
     - Establishes a connection with the server using a socket.
     - Initializes input/output streams.
 
 - **Send/Receive Mechanisms**:
-    - Sends messages entered by the user to the server.
+    - Sends messages entered by the user to the server after successful authentication.
     - Listens for and displays incoming messages from the server in a separate thread.
 
 - **Graceful Disconnect**:
