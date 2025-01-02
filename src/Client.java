@@ -22,14 +22,14 @@ public class Client {
 
     public void sendMessage() {
         try (Scanner scanner = new Scanner(System.in)) {
-            bufferedWriter.write(username); // Send username to the server
+            bufferedWriter.write(username);
             bufferedWriter.newLine();
             bufferedWriter.flush();
 
             System.out.println("Welcome to the chat, " + username + "! Type your messages below:");
 
             while (socket.isConnected()) {
-                String message = scanner.nextLine().trim(); // Trim whitespace
+                String message = scanner.nextLine().trim();
                 if (!message.isEmpty()) {
                     bufferedWriter.write(message);
                     bufferedWriter.newLine();
@@ -48,7 +48,7 @@ public class Client {
         new Thread(() -> {
             while (socket.isConnected()) {
                 try {
-                    String messageFromGroupChat = bufferedReader.readLine(); // Read messages from server
+                    String messageFromGroupChat = bufferedReader.readLine();
                     if (messageFromGroupChat != null) {
                         System.out.println(messageFromGroupChat);
                     } else {
@@ -90,8 +90,8 @@ public class Client {
 
             Socket socket = new Socket("localhost", 5000);
             Client client = new Client(socket, username);
-            client.listenForMessages(); // Start listening for incoming messages
-            client.sendMessage();       // Allow the user to send messages
+            client.listenForMessages();
+            client.sendMessage();
         } catch (IOException e) {
             System.out.println("Error connecting to the server. Please ensure the server is running.");
             e.printStackTrace();

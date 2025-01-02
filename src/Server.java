@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
     private ServerSocket serverSocket;
-    private static List<ClientHandler> clientHandlers = new CopyOnWriteArrayList<>();// this creates a new list everytime some operation occurs hece safe for multithreaded emvironment
-    private static Set<String> usernames = ConcurrentHashMap.newKeySet(); // Thread-safe Set
+    private static final List<ClientHandler> clientHandlers = new CopyOnWriteArrayList<>();
+    private static final Set<String> usernames = ConcurrentHashMap.newKeySet();
 
     public Server(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
@@ -17,14 +17,14 @@ public class Server {
 
     public void startServer() {
         System.out.println("Server is running...");
-        while (!serverSocket.isClosed()) { //blocked
+        while (!serverSocket.isClosed()) {
             try {
-                Socket socket = serverSocket.accept();// waiting for client to accept
+                Socket socket = serverSocket.accept();
                 System.out.println("New client connected!");
-                ClientHandler clientHandler = new ClientHandler(socket, clientHandlers, usernames); // Pass `usernames`, chandelier
-                new Thread(clientHandler).start(); // Start client handler in a new thread
+                ClientHandler clientHandler = new ClientHandler(socket, clientHandlers, usernames);
+                new Thread(clientHandler).start();
             } catch (IOException e) {
-                System.out.println("Error accepting client connection."); // in case of IO failure
+                System.out.println("Error accepting client connection.");
                 e.printStackTrace();
             }
         }
@@ -36,7 +36,6 @@ public class Server {
             if (serverSocket != null) {
                 serverSocket.close();
             }
-            // Notify all clients about server shutdown
             for (ClientHandler clientHandler : clientHandlers) {
                 clientHandler.broadcastMessage("SERVER: The server is shutting down.");
                 clientHandler.closeEverything();
@@ -52,7 +51,6 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(5000);
             Server server = new Server(serverSocket);
 
-            // Add a shutdown hook for graceful shutdown (optional)
             Runtime.getRuntime().addShutdownHook(new Thread(server::closeServerSocket));
 
             server.startServer();
